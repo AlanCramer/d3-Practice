@@ -1,0 +1,254 @@
+
+<!--
+// recreate 
+// http://www.mappingthenation.com/blog/wp-content/uploads/playfair-chart2-1801.jpg
+-->
+
+<html>
+<head>
+    <script src="../d3.min.js"></script>
+    
+
+    <link href='https://fonts.googleapis.com/css?family=Tangerine' rel='stylesheet' type='text/css'>
+
+    
+    
+    <style type="text/css">
+    
+        @font-face {
+            font-family: 'Anglican';
+            src: url('AnglicanText.ttf');
+        }
+        
+        svg {
+            background: #efe6c4;
+        }
+        
+        svg #main-border {
+            stroke-width: 3px;
+            stroke: black;
+            fill: none;
+        }
+        
+        svg #main-border2 {
+            stroke-width: 1px;
+            stroke: black;
+            fill: none;
+        }
+        
+        svg #chart-border {
+            stroke-width: 1px;
+            stroke: black;
+            fill: #efead4;;
+        }
+        
+        svg .title-ellipse {
+            fill: #efe4b4;
+            stroke-width: 1px;
+            stroke: black;
+        }
+        
+        .title-anglican {
+            font-family: 'Anglican';
+            font-size: 60px;
+            text-anchor: middle;
+        }
+    
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: #888;
+            shape-rendering: crispEdges;
+        }
+
+        .axis text {
+            font-family: 'Tangerine', cursive;
+            
+            font-size: 20px;
+            font-weight: bold;
+        }
+    
+        .area {
+            fill: #ccc7a1;
+        }
+        
+        .valueline {
+            fill: none;
+            stroke: #b22222;
+            stroke-width: 5;
+            //stroke-opacity: .5;
+        }
+        
+        .valueline2 {
+            fill: none;
+            stroke: black;
+            stroke-width: 1;
+
+        }
+    
+    </style>
+    
+</head>
+<body>
+
+    <script>
+
+    var svgW = 600;
+    var svgH = 1000;
+
+    var mainMargin = 15;
+    var chartMargin = 40;
+    
+    var chartW = svgW - 2*chartMargin;
+    var chartH = svgH - 2*chartMargin;
+    
+    var svg = d3.select("body").append("svg")
+        .attr("width", svgW)
+        .attr("height", svgH)
+    ;
+    
+    // main border
+    svg.append("rect")
+        .attr("id", "main-border")
+        .attr("x", mainMargin)
+        .attr("y", mainMargin)
+        .attr("width", svgW - 2*mainMargin)
+        .attr("height", svgH - 2*mainMargin)
+        ;
+        
+        // main border
+    var mainBorderOffset = 4;
+    svg.append("rect")
+        .attr("id", "main-border2")
+        .attr("x", mainMargin+mainBorderOffset)
+        .attr("y", mainMargin+mainBorderOffset)
+        .attr("width", svgW - 2*(mainMargin+mainBorderOffset))
+        .attr("height", svgH - 2*(mainMargin+mainBorderOffset))
+        ;    
+    
+    // chart area
+    svg.append("rect")
+        .attr("id", "chart-border")
+        .attr("x", chartMargin)
+        .attr("y", chartMargin)
+        .attr("width", chartW)
+        .attr("height", chartH)
+        ;
+    
+    var data = [  // that's it ... all the data for this graph right here
+        { yr: 1688, nd: 2 },
+        { yr: 1701, nd: 20 },
+        { yr: 1714, nd: 56 },
+        { yr: 1727, nd: 52 },
+        { yr: 1730, nd: 49 },
+        { yr: 1748, nd: 79 },
+        { yr: 1755, nd: 75 },
+        { yr: 1762, nd: 145 },     
+        { yr: 1775, nd: 135 }, 
+        { yr: 1784, nd: 250 }, 
+        { yr: 1793, nd: 252 },  
+        { yr: 1800, nd: 395 },         
+    ];
+    
+    var minYr = d3.min(data, function(d) { return d.yr; });
+    var maxYr = d3.max(data, function(d) { return d.yr; });
+    var minNd = d3.min(data, function(d) { return d.nd; });
+    var maxNd = 500 ; // d3.max(data, function(d) { return d.nd; });
+
+    var xScale = d3.scale.linear()
+        .domain([minYr, maxYr])
+        .range([chartMargin, chartMargin + chartW])
+    ;
+    
+    var yScale = d3.scale.linear()
+        .domain([minNd, maxNd])
+        .range([chartMargin + chartH, chartMargin])
+    ;
+    
+    var area = d3.svg.area()
+        .x(function(d) { return xScale(d.yr); })
+        .y0(chartH+ chartMargin)
+        .y1(function(d) { return yScale(d.nd); });
+    
+    svg.append("path")
+        .datum(data)
+        .attr("class", "area")
+        .attr("d", area)
+    ;
+    
+    var yrs = data.map(function(d) { return d.yr; });
+    var xAxis = d3.svg.axis()
+        .scale(xScale)
+        .tickFormat(d3.format("d"))
+        .tickValues(yrs)
+        .tickSize(-chartH)
+    ;
+    
+
+    
+    var nds = data.map(function(d) { return d.nd; });
+    var yAxis = d3.svg.axis()
+        .scale(yScale)
+        .orient("right")
+        .tickSize(-chartW)
+        .ticks(50)
+    ;
+    
+    svg.append("g")
+        .attr("class", "axis") 
+        .attr("transform", "translate(0," + (chartH + chartMargin) + ")")
+        .call(xAxis)
+    ;
+    
+    svg.append("g")
+        .attr("class", "axis") 
+        .attr("transform", "translate(" +(chartW + chartMargin)+ ", 0)")
+        .call(yAxis)
+    ;
+    
+        // special bump of 1727 and 1730 to not collide
+    d3.selectAll(".tick text").each(function(d) { 
+    
+        var sel = d3.select(this);
+        if (d === 1727) {
+            sel.style("text-anchor", "end");
+        }
+        
+        if (sel.text() === "1730") {
+            sel.style("text-anchor", "start");
+        }
+    });
+    
+    var valueline = d3.svg.line()
+        .x(function(d) { return xScale(d.yr); })
+        .y(function(d) { return yScale(d.nd); });
+        
+    // Add the valueline path.
+    svg.append("path")
+        .attr("class", "valueline")
+        .attr("d", valueline(data));
+        
+    svg.append("path")
+        .attr("class", "valueline2")
+        .attr("d", valueline(data));
+        
+    svg.append("ellipse")
+        .attr("class", "title-ellipse")
+        .attr("cx", (1/2)*svgW)
+        .attr("cy", (1/5)*svgH)
+        .attr("rx", (1/4)*svgW)
+        .attr("ry", (1/7)*svgW)
+    ;
+    
+    svg.append("text")
+        .attr("class", "title-anglican")
+        .attr("x", (1/2)*svgW)
+        .attr("y", (1/5)*svgH + 15)
+        .text("National Debt")
+    ;
+        
+    </script>
+
+</body>
+</html>
+
